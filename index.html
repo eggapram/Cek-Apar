@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APAR Reminder — Sistem Pengingat Isi Ulang</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧯</text></svg>">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f5f4;
+    --bg3: #eeede8;
+    --text: #1a1a18;
+    --text2: #6b6b67;
+    --text3: #9c9b97;
+    --border: rgba(0,0,0,0.12);
+    --border2: rgba(0,0,0,0.25);
+    --red: #E24B4A;
+    --red-bg: #FCEBEB;
+    --red-text: #A32D2D;
+    --amber: #BA7517;
+    --amber-bg: #FAEEDA;
+    --amber-text: #854F0B;
+    --green: #3B6D11;
+    --green-bg: #EAF3DE;
+    --green-text: #3B6D11;
+    --blue-bg: #E6F1FB;
+    --blue-text: #185FA5;
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --bg2: #252522;
+      --bg3: #2e2e2b;
+      --text: #f0efeb;
+      --text2: #9c9b97;
+      --text3: #6b6b67;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.22);
+      --red-bg: #3d1515;
+      --red-text: #f09595;
+      --amber-bg: #3a2a08;
+      --amber-text: #FAC775;
+      --green-bg: #1a2e08;
+      --green-text: #C0DD97;
+      --blue-bg: #0c2340;
+      --blue-text: #85B7EB;
+    }
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg3); color: var(--text); font-size: 15px; min-height: 100vh; }
+
+  /* TOPBAR */
+  .topbar { background: var(--bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
+  .topbar-inner { max-width: 900px; margin: 0 auto; padding: 0 20px; height: 60px; display: flex; align-items: center; justify-content: space-between; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-icon { width: 36px; height: 36px; background: var(--red); border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .brand-icon i { color: white; font-size: 20px; }
+  .brand-text h1 { font-size: 16px; font-weight: 600; line-height: 1.2; }
+  .brand-text p { font-size: 12px; color: var(--text2); }
+  .btn-primary { background: var(--red); color: white; border: none; border-radius: 8px; padding: 8px 16px; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .btn-primary:hover { opacity: 0.88; }
+
+  /* LAYOUT */
+  .container { max-width: 900px; margin: 0 auto; padding: 24px 20px; }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+  @media(max-width:600px){ .stats-grid { grid-template-columns: repeat(2,1fr); } }
+  .stat-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .stat-label { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+  .stat-num { font-size: 26px; font-weight: 600; line-height: 1; }
+  .stat-num.red { color: var(--red); }
+  .stat-num.amber { color: var(--amber); }
+
+  /* TABS */
+  .tabs-bar { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 16px; background: var(--bg); border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 0 16px; }
+  .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; padding: 12px 14px; font-size: 14px; cursor: pointer; color: var(--text2); display: flex; align-items: center; gap: 6px; font-weight: 400; }
+  .tab-btn.active { color: var(--red); border-bottom-color: var(--red); font-weight: 500; }
+  .tab-badge { background: var(--red); color: white; border-radius: 20px; font-size: 11px; padding: 1px 7px; font-weight: 600; }
+
+  /* PANEL */
+  .panel { background: var(--bg); border: 1px solid var(--border); border-radius: 0 0 var(--radius-lg) var(--radius-lg); padding: 16px; border-top: none; }
+
+  /* SEARCH + TOOLBAR */
+  .toolbar { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .search-wrap { flex: 1; min-width: 180px; display: flex; align-items: center; gap: 8px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px; }
+  .search-wrap i { color: var(--text3); font-size: 16px; flex-shrink: 0; }
+  .search-wrap input { background: none; border: none; outline: none; flex: 1; font-size: 14px; color: var(--text); }
+  .btn-outline { background: none; border: 1px solid var(--border2); border-radius: 8px; padding: 7px 13px; font-size: 13px; cursor: pointer; color: var(--text2); display: flex; align-items: center; gap: 6px; }
+  .btn-outline:hover { background: var(--bg2); color: var(--text); }
+
+  /* GROUPED ACCORDION */
+  .group-card { border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; background: var(--bg); overflow: hidden; transition: border-color .15s; }
+  .group-card:hover { border-color: var(--border2); }
+  .group-card.has-alert { border-color: rgba(226,75,74,.35); }
+  .group-card.has-warn  { border-color: rgba(186,117,23,.3); }
+
+  .group-header { display: flex; align-items: center; gap: 12px; padding: 13px 16px; cursor: pointer; user-select: none; }
+  .group-header:hover { background: var(--bg2); }
+  .group-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--bg2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: var(--text2); flex-shrink: 0; }
+  .group-info { flex: 1; min-width: 0; }
+  .group-name { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .group-sub  { font-size: 13px; color: var(--text2); margin-top: 2px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .group-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .unit-count { font-size: 12px; font-weight: 600; background: var(--bg2); border: 1px solid var(--border); border-radius: 20px; padding: 3px 10px; color: var(--text2); }
+  .chevron { font-size: 18px; color: var(--text3); transition: transform .22s; }
+  .group-card.open .chevron { transform: rotate(180deg); }
+
+  /* STATUS DOTS MINI */
+  .dot-row { display: flex; gap: 4px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* UNIT LIST (collapsed by default) */
+  .unit-list { display: none; border-top: 1px solid var(--border); }
+  .group-card.open .unit-list { display: block; }
+
+  /* UNIT ROW */
+  .unit-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .unit-row:last-child { border-bottom: none; }
+  .unit-index { width: 22px; height: 22px; border-radius: 50%; background: var(--bg2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--text2); flex-shrink: 0; margin-top: 1px; }
+  .unit-body { flex: 1; min-width: 0; }
+  .unit-loc { font-size: 13px; font-weight: 500; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+  .unit-meta { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+  .unit-meta span { display: flex; align-items: center; gap: 3px; }
+  .progress-track { height: 4px; background: var(--bg3); border-radius: 4px; overflow: hidden; margin-bottom: 6px; }
+  .progress-fill { height: 100%; border-radius: 4px; }
+  .unit-actions { display: flex; gap: 6px; }
+
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+  .badge-red   { background: var(--red-bg);   color: var(--red-text); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber-text); }
+  .badge-green { background: var(--green-bg); color: var(--green-text); }
+
+  .btn-sm { font-size: 12px; padding: 4px 10px; border-radius: 6px; cursor: pointer; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); display: flex; align-items: center; gap: 4px; }
+  .btn-sm:hover { background: var(--bg3); color: var(--text); }
+  .btn-sm.danger:hover { color: var(--red); border-color: var(--red); background: var(--red-bg); }
+  .btn-sm.whatsapp { color: #16a34a; border-color: #16a34a22; background: #f0fdf4; }
+  .btn-sm.whatsapp:hover { background: #dcfce7; }
+
+  /* GROUP FOOTER (add unit button) */
+  .group-footer { padding: 9px 16px; border-top: 1px solid var(--border); background: var(--bg2); display: flex; align-items: center; justify-content: space-between; }
+  .btn-add-unit { font-size: 12px; color: var(--text2); background: none; border: 1px dashed var(--border2); border-radius: 6px; padding: 5px 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+  .btn-add-unit:hover { color: var(--red); border-color: var(--red); background: var(--red-bg); }
+
+  /* EMPTY */
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text3); }
+  .empty-state i { font-size: 48px; display: block; margin-bottom: 12px; color: var(--border2); }
+  .empty-state p { font-size: 14px; line-height: 1.6; }
+
+  /* NOTIF */
+  .notif-item { border-left: 3px solid var(--red); padding: 12px 14px; background: var(--bg2); border-radius: 0 var(--radius) var(--radius) 0; margin-bottom: 10px; }
+  .notif-item.warn { border-left-color: var(--amber); }
+  .notif-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .notif-detail { font-size: 13px; color: var(--text2); line-height: 1.5; }
+  .notif-actions { margin-top: 8px; display: flex; gap: 8px; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
+  .modal-overlay.open { display: flex; }
+  .modal-box { background: var(--bg); border-radius: var(--radius-lg); padding: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border2); }
+  .modal-box h2 { font-size: 17px; font-weight: 600; margin-bottom: 18px; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 13px; color: var(--text2); margin-bottom: 5px; font-weight: 500; }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%; padding: 9px 11px; border: 1px solid var(--border2); border-radius: 8px;
+    font-size: 14px; background: var(--bg); color: var(--text); font-family: inherit;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 3px rgba(226,75,74,0.12); }
+  .form-group textarea { resize: vertical; min-height: 64px; }
+  .form-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .btn-cancel { padding: 9px 18px; border-radius: 8px; border: 1px solid var(--border2); background: none; cursor: pointer; font-size: 14px; color: var(--text2); }
+  .btn-cancel:hover { background: var(--bg2); }
+  .btn-save { padding: 9px 20px; border-radius: 8px; background: var(--red); color: white; border: none; cursor: pointer; font-size: 14px; font-weight: 600; }
+  .btn-save:hover { opacity: 0.88; }
+
+  /* FOOTER */
+  .page-footer { text-align: center; padding: 24px 0 8px; font-size: 12px; color: var(--text3); }
+
+  /* PRINT */
+  @media print {
+    .topbar, .tabs-bar, .toolbar, .card-footer, .modal-overlay { display: none !important; }
+    body { background: white; }
+    .apar-card { break-inside: avoid; }
+  }
+
+  @media(max-width:500px){
+    .form-row2 { grid-template-columns: 1fr; }
+    .topbar-inner { gap: 10px; }
+    .brand-text p { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-icon"><i class="ti ti-flame"></i></div>
+      <div class="brand-text">
+        <h1>APAR Reminder</h1>
+        <p>Sistem Pengingat Isi Ulang Alat Pemadam</p>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="openModal()"><i class="ti ti-plus"></i> Tambah APAR</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total APAR</div>
+      <div class="stat-num" id="st-total">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Jatuh Tempo / Lewat</div>
+      <div class="stat-num red" id="st-overdue">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Kurang 30 Hari</div>
+      <div class="stat-num amber" id="st-soon">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Masih Aman</div>
+      <div class="stat-num" id="st-ok">0</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs-bar">
+    <button class="tab-btn active" onclick="switchTab('all',this)"><i class="ti ti-list"></i> Semua Data</button>
+    <button class="tab-btn" onclick="switchTab('notif',this)" id="tab-notif-btn"><i class="ti ti-bell"></i> Notifikasi</button>
+    <button class="tab-btn" onclick="switchTab('export',this)"><i class="ti ti-database"></i> Data &amp; Export</button>
+  </div>
+
+  <!-- TAB: SEMUA -->
+  <div class="panel" id="panel-all">
+    <div class="toolbar">
+      <div class="search-wrap">
+        <i class="ti ti-search"></i>
+        <input type="text" id="search-input" placeholder="Cari nama, alamat, telepon..." oninput="renderList()">
+      </div>
+      <select class="btn-outline" id="filter-status" onchange="renderList()" style="cursor:pointer">
+        <option value="">Semua Status</option>
+        <option value="overdue">Lewat / Hari Ini</option>
+        <option value="soon">Hampir Jatuh Tempo</option>
+        <option value="ok">Masih Aman</option>
+      </select>
+    </div>
+    <div id="list-container"></div>
+  </div>
+
+  <!-- TAB: NOTIF -->
+  <div class="panel" id="panel-notif" style="display:none">
+    <div id="notif-container"></div>
+  </div>
+
+  <!-- TAB: EXPORT -->
+  <div class="panel" id="panel-export" style="display:none; padding:20px;">
+    <p style="font-size:14px;color:var(--text2);margin-bottom:16px;line-height:1.6">
+      Kelola data APAR kamu: ekspor untuk backup, impor dari file, atau hapus semua data.
+    </p>
+    <div style="display:flex;flex-direction:column;gap:10px;max-width:380px">
+      <button class="btn-outline" onclick="exportCSV()" style="justify-content:flex-start;padding:12px 16px;font-size:14px">
+        <i class="ti ti-file-spreadsheet" style="font-size:18px;color:#3B6D11"></i>
+        <div><strong>Export ke CSV</strong><br><span style="font-size:12px;color:var(--text2)">Buka di Excel, Google Sheets, dll</span></div>
+      </button>
+      <button class="btn-outline" onclick="exportJSON()" style="justify-content:flex-start;padding:12px 16px;font-size:14px">
+        <i class="ti ti-file-code" style="font-size:18px;color:#185FA5"></i>
+        <div><strong>Export ke JSON</strong><br><span style="font-size:12px;color:var(--text2)">Backup data lengkap, bisa diimpor kembali</span></div>
+      </button>
+      <label class="btn-outline" style="justify-content:flex-start;padding:12px 16px;font-size:14px;cursor:pointer">
+        <i class="ti ti-file-import" style="font-size:18px;color:#854F0B"></i>
+        <div><strong>Import dari JSON</strong><br><span style="font-size:12px;color:var(--text2)">Pulihkan data dari file backup</span></div>
+        <input type="file" accept=".json" onchange="importJSON(event)" style="display:none">
+      </label>
+      <hr style="border:none;border-top:1px solid var(--border);margin:4px 0">
+      <button class="btn-outline" onclick="clearAll()" style="justify-content:flex-start;padding:12px 16px;font-size:14px;color:var(--red);border-color:var(--red)">
+        <i class="ti ti-trash" style="font-size:18px"></i>
+        <div><strong>Hapus Semua Data</strong><br><span style="font-size:12px;opacity:.7">Tidak dapat dibatalkan</span></div>
+      </button>
+    </div>
+    <div id="import-msg" style="margin-top:12px;font-size:13px;color:var(--green)"></div>
+  </div>
+
+</div>
+
+<div class="page-footer">
+  Data tersimpan di browser (localStorage) &mdash; tidak dikirim ke server manapun 🔒
+</div>
+
+<!-- MODAL FORM -->
+<div class="modal-overlay" id="modal-overlay" onclick="bgClose(event)">
+  <div class="modal-box">
+    <h2 id="modal-title">Tambah Data APAR</h2>
+    <div class="form-group">
+      <label>Nama Pembeli / Perusahaan <span style="color:var(--red)">*</span></label>
+      <input type="text" id="f-nama" placeholder="Contoh: PT Maju Bersama / Budi Santoso" oninput="onQtyChange()">
+    </div>
+    <div class="form-group">
+      <label>Alamat Penempatan APAR <span style="color:var(--red)">*</span></label>
+      <textarea id="f-alamat" placeholder="Jl. Sudirman No. 10, Lt. 3, Jakarta Selatan" oninput="onQtyChange()"></textarea>
+    </div>
+    <div class="form-row2">
+      <div class="form-group">
+        <label>Nomor Telepon <span style="color:var(--red)">*</span></label>
+        <input type="tel" id="f-telp" placeholder="0812xxxxxxxx">
+      </div>
+      <div class="form-group">
+        <label>Jenis APAR</label>
+        <input type="text" id="f-jenis" list="jenis-list" placeholder="CO2, Dry Powder, dll">
+        <datalist id="jenis-list">
+          <option value="Dry Powder ABC">
+          <option value="CO2 (Karbon Dioksida)">
+          <option value="AFFF (Foam)">
+          <option value="Halotron">
+          <option value="Water Mist">
+        </datalist>
+      </div>
+    </div>
+    <div class="form-row2">
+      <div class="form-group">
+        <label>Kapasitas</label>
+        <input type="text" id="f-kapasitas" placeholder="3 kg, 6 kg, 9 liter...">
+      </div>
+      <div class="form-group">
+        <label>No. Seri / Tag APAR</label>
+        <input type="text" id="f-seri" placeholder="Opsional">
+      </div>
+    </div>
+    <div class="form-row2">
+      <div class="form-group">
+        <label>Tanggal Pembelian <span style="color:var(--red)">*</span></label>
+        <input type="date" id="f-tgl">
+      </div>
+      <div class="form-group">
+        <label>Interval Isi Ulang <span style="color:var(--red)">*</span></label>
+        <select id="f-interval">
+          <option value="1">1 Tahun</option>
+          <option value="2">2 Tahun</option>
+          <option value="3">3 Tahun</option>
+          <option value="4">4 Tahun</option>
+          <option value="5">5 Tahun</option>
+          <option value="6">6 Tahun</option>
+          <option value="7">7 Tahun</option>
+          <option value="8">8 Tahun</option>
+          <option value="10">10 Tahun</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group" id="qty-group">
+      <label>Jumlah Unit APAR <span style="color:var(--text3);font-weight:400">(jika lebih dari 1, data akan dibuat otomatis per unit)</span></label>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button type="button" onclick="changeQty(-1)" style="width:34px;height:34px;border-radius:8px;border:1px solid var(--border2);background:var(--bg2);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text)">−</button>
+        <input type="number" id="f-qty" value="1" min="1" max="99" oninput="onQtyChange()"
+          style="width:70px;text-align:center;font-size:16px;font-weight:600;padding:7px 8px;border:1px solid var(--border2);border-radius:8px;background:var(--bg);color:var(--text)">
+        <button type="button" onclick="changeQty(1)" style="width:34px;height:34px;border-radius:8px;border:1px solid var(--border2);background:var(--bg2);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text)">+</button>
+        <span id="qty-hint" style="font-size:13px;color:var(--text2)"></span>
+      </div>
+      <div id="qty-preview" style="margin-top:10px;display:none;background:var(--bg2);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--text2);line-height:1.8"></div>
+    </div>
+    <div class="form-group">
+      <label>Catatan <span style="color:var(--text3);font-weight:400">(berlaku untuk semua unit)</span></label>
+      <textarea id="f-catatan" placeholder="Opsional: info tambahan, lokasi spesifik, dll" rows="2"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Batal</button>
+      <button class="btn-save" id="btn-save-main" onclick="saveData()"><i class="ti ti-check"></i> Simpan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────
+const STORE_KEY = 'apar_reminder_v2';
+let data = [];
+
+function loadData() {
+  try { data = JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); }
+  catch(e) { data = []; }
+}
+function saveStore() { localStorage.setItem(STORE_KEY, JSON.stringify(data)); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+// ─── DATE UTILS ─────────────────────────────────────────────
+function today() { const d = new Date(); d.setHours(0,0,0,0); return d; }
+function dueDate(tgl, interval) {
+  const d = new Date(tgl);
+  d.setFullYear(d.getFullYear() + parseInt(interval));
+  return d;
+}
+function daysLeft(due) {
+  return Math.ceil((new Date(due) - today()) / (1000*60*60*24));
+}
+function fmtDate(d) {
+  return new Date(d).toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
+}
+function statusOf(days) {
+  if (days < 0)  return { label:`Lewat ${Math.abs(days)} hari`,  cls:'badge-red',   color:'#E24B4A', key:'overdue' };
+  if (days === 0) return { label:'Jatuh Tempo Hari Ini',          cls:'badge-red',   color:'#E24B4A', key:'overdue' };
+  if (days <= 30) return { label:`${days} hari lagi`,             cls:'badge-amber', color:'#BA7517', key:'soon'    };
+  return           { label:`${days} hari lagi`,                   cls:'badge-green', color:'#3B6D11', key:'ok'      };
+}
+function progressOf(tgl, interval) {
+  const start = new Date(tgl).getTime();
+  const end   = dueDate(tgl, interval).getTime();
+  const now   = today().getTime();
+  const pct   = Math.max(0, Math.min(100, (now - start) / (end - start) * 100));
+  return Math.round(pct);
+}
+function progressColor(pct) {
+  if (pct >= 100) return '#E24B4A';
+  if (pct >= 88)  return '#BA7517';
+  return '#3B6D11';
+}
+
+// ─── RENDER STATS ────────────────────────────────────────────
+function renderStats() {
+  let overdue=0, soon=0, ok=0;
+  data.forEach(d => {
+    const days = daysLeft(dueDate(d.tgl, d.interval));
+    if (days <= 0) overdue++;
+    else if (days <= 30) soon++;
+    else ok++;
+  });
+  document.getElementById('st-total').textContent   = data.length;
+  document.getElementById('st-overdue').textContent = overdue;
+  document.getElementById('st-soon').textContent    = soon;
+  document.getElementById('st-ok').textContent      = ok;
+
+  const notifCount = overdue + soon;
+  const tabBtn = document.getElementById('tab-notif-btn');
+  const existing = tabBtn.querySelector('.tab-badge');
+  if (existing) existing.remove();
+  if (notifCount > 0) {
+    const badge = document.createElement('span');
+    badge.className = 'tab-badge';
+    badge.textContent = notifCount;
+    tabBtn.appendChild(badge);
+  }
+}
+
+// ─── RENDER LIST (grouped by client) ─────────────────────────
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function initials(name) {
+  return (name||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase() || '?';
+}
+
+// track which groups are open
+const openGroups = new Set();
+
+function groupKey(d) {
+  // group by phone number (most reliable unique key per client)
+  return (d.telp||'').replace(/\D/g,'') || d.nama;
+}
+
+function renderList() {
+  const q      = (document.getElementById('search-input').value || '').toLowerCase();
+  const filter = document.getElementById('filter-status').value;
+
+  let items = data.filter(d => {
+    const match = !q ||
+      (d.nama||'').toLowerCase().includes(q) ||
+      (d.alamat||'').toLowerCase().includes(q) ||
+      (d.telp||'').includes(q) ||
+      (d.jenis||'').toLowerCase().includes(q) ||
+      (d.seri||'').toLowerCase().includes(q);
+    if (!match) return false;
+    if (filter) {
+      const days = daysLeft(dueDate(d.tgl, d.interval));
+      return statusOf(days).key === filter;
+    }
+    return true;
+  });
+
+  const c = document.getElementById('list-container');
+  if (!items.length) {
+    c.innerHTML = `<div class="empty-state">
+      <i class="ti ti-flame-off"></i>
+      <p>${data.length ? 'Tidak ada data yang cocok.' : 'Belum ada data APAR.<br>Klik <strong>Tambah APAR</strong> untuk mulai.'}</p>
+    </div>`;
+    return;
+  }
+
+  // group items by client key
+  const groupMap = new Map();
+  items.forEach(d => {
+    const k = groupKey(d);
+    if (!groupMap.has(k)) groupMap.set(k, []);
+    groupMap.get(k).push(d);
+  });
+
+  // sort groups: worst status first, then by nearest due date
+  const statusRank = { overdue:0, soon:1, ok:2 };
+  const groups = [...groupMap.entries()].map(([key, units]) => {
+    const worstDays = Math.min(...units.map(u => daysLeft(dueDate(u.tgl, u.interval))));
+    const worstStatus = statusOf(worstDays);
+    return { key, units, worstDays, worstStatus };
+  });
+  groups.sort((a,b) => {
+    const ra = statusRank[a.worstStatus.key] ?? 2;
+    const rb = statusRank[b.worstStatus.key] ?? 2;
+    return ra !== rb ? ra - rb : a.worstDays - b.worstDays;
+  });
+
+  c.innerHTML = groups.map(({ key, units, worstDays, worstStatus }) => {
+    const rep   = units[0]; // representative unit for group header info
+    const isOpen = openGroups.has(key);
+    const waNum  = (rep.telp||'').replace(/\D/g,'').replace(/^0/,'62');
+
+    // status dots
+    const dotColors = units.map(u => {
+      const d2 = daysLeft(dueDate(u.tgl, u.interval));
+      if (d2 <= 0)  return '#E24B4A';
+      if (d2 <= 30) return '#BA7517';
+      return '#3B6D11';
+    });
+    const dotsHtml = `<div class="dot-row">${dotColors.map(c2=>`<div class="dot" style="background:${c2}"></div>`).join('')}</div>`;
+
+    // alert class for group border
+    const alertCls = worstStatus.key==='overdue' ? 'has-alert' : worstStatus.key==='soon' ? 'has-warn' : '';
+
+    // unit rows
+    const unitRows = units.map((u, idx) => {
+      const due  = dueDate(u.tgl, u.interval);
+      const days = daysLeft(due);
+      const st   = statusOf(days);
+      const pct  = progressOf(u.tgl, u.interval);
+      const pcol = progressColor(pct);
+      const waMsg = encodeURIComponent(
+        `Halo ${u.nama}, kami ingin mengingatkan bahwa APAR Anda di lokasi "${u.alamat}" ${days <= 0 ? 'sudah melewati batas' : `akan jatuh tempo pada ${fmtDate(due)}`} untuk pengisian ulang. Mohon segera hubungi kami. Terima kasih.`
+      );
+      // strip "Unit X dari Y" from catatan for display if it's the only content
+      const catatanDisplay = (u.catatan||'').replace(/^\s*Unit \d+ dari \d+\s*$/, '').trim();
+      return `<div class="unit-row">
+        <div class="unit-index">${idx+1}</div>
+        <div class="unit-body">
+          <div class="unit-loc">
+            <i class="ti ti-map-pin" style="font-size:12px;color:var(--text3)"></i>
+            <span>${esc(u.alamat)}</span>
+            <span class="badge ${st.cls}" style="margin-left:4px">${st.label}</span>
+          </div>
+          <div class="unit-meta">
+            ${u.jenis ? `<span><i class="ti ti-flame" style="font-size:12px"></i>${esc(u.jenis)}${u.kapasitas?' · '+esc(u.kapasitas):''}</span>` : ''}
+            <span><i class="ti ti-calendar-due" style="font-size:12px"></i>Isi ulang: ${fmtDate(due)}</span>
+            <span><i class="ti ti-refresh" style="font-size:12px"></i>${u.interval} tahun</span>
+            ${u.seri ? `<span><i class="ti ti-barcode" style="font-size:12px"></i>${esc(u.seri)}</span>` : ''}
+          </div>
+          ${catatanDisplay ? `<div style="font-size:12px;color:var(--text2);margin-bottom:5px"><i class="ti ti-notes" style="font-size:12px"></i> ${esc(catatanDisplay)}</div>` : ''}
+          <div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${pcol}"></div></div>
+          <div class="unit-actions">
+            <button class="btn-sm" onclick="event.stopPropagation();editItem('${u.id}')"><i class="ti ti-edit"></i> Edit</button>
+            <button class="btn-sm danger" onclick="event.stopPropagation();deleteItem('${u.id}')"><i class="ti ti-trash"></i> Hapus</button>
+            ${waNum ? `<a href="https://wa.me/${waNum}?text=${waMsg}" target="_blank" class="btn-sm whatsapp" style="text-decoration:none" onclick="event.stopPropagation()"><i class="ti ti-brand-whatsapp"></i> WA</a>` : ''}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // quick-add unit button (prefills form with same client data)
+    const addUnitBtn = `<button class="btn-add-unit" onclick="event.stopPropagation();addUnitToGroup('${esc(rep.nama)}','${esc(rep.telp)}','${rep.tgl}','${rep.interval}')">
+      <i class="ti ti-plus"></i> Tambah unit APAR
+    </button>`;
+
+    return `<div class="group-card ${alertCls}${isOpen?' open':''}" id="grp-${esc(key)}">
+      <div class="group-header" onclick="toggleGroup('${esc(key)}')">
+        <div class="group-avatar">${initials(rep.nama)}</div>
+        <div class="group-info">
+          <div class="group-name">${esc(rep.nama)}</div>
+          <div class="group-sub">
+            <span><i class="ti ti-phone" style="font-size:12px"></i>${esc(rep.telp)}</span>
+            ${dotsHtml}
+          </div>
+        </div>
+        <div class="group-right">
+          <span class="unit-count">${units.length} unit</span>
+          <span class="badge ${worstStatus.cls}">${worstStatus.key==='ok' ? 'Aman' : worstStatus.key==='soon' ? 'Perhatian' : 'Perlu Tindakan'}</span>
+          <i class="ti ti-chevron-down chevron"></i>
+        </div>
+      </div>
+      <div class="unit-list">
+        ${unitRows}
+        <div class="group-footer">
+          ${addUnitBtn}
+          <span style="font-size:12px;color:var(--text3)">${units.length} unit terdaftar</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleGroup(key) {
+  if (openGroups.has(key)) openGroups.delete(key);
+  else openGroups.add(key);
+  const el = document.getElementById('grp-' + key);
+  if (el) el.classList.toggle('open', openGroups.has(key));
+}
+
+function addUnitToGroup(nama, telp, tgl, interval) {
+  // prefill modal with existing client info, ready to add another unit
+  openModal();
+  setTimeout(() => {
+    document.getElementById('f-nama').value     = nama;
+    document.getElementById('f-telp').value     = telp;
+    document.getElementById('f-tgl').value      = tgl;
+    document.getElementById('f-interval').value = interval;
+  }, 50);
+}
+
+// ─── RENDER NOTIF ────────────────────────────────────────────
+function renderNotif() {
+  const urgent = data
+    .filter(d => daysLeft(dueDate(d.tgl, d.interval)) <= 30)
+    .sort((a,b) => daysLeft(dueDate(a.tgl,a.interval)) - daysLeft(dueDate(b.tgl,b.interval)));
+
+  const c = document.getElementById('notif-container');
+  if (!urgent.length) {
+    c.innerHTML = `<div class="empty-state"><i class="ti ti-bell-off"></i><p>Tidak ada notifikasi saat ini.<br>Semua APAR masih dalam batas aman.</p></div>`;
+    return;
+  }
+  c.innerHTML = urgent.map(d => {
+    const due  = dueDate(d.tgl, d.interval);
+    const days = daysLeft(due);
+    const isOD = days <= 0;
+    const waMsg = encodeURIComponent(
+      `Halo ${d.nama}, kami ingin mengingatkan bahwa APAR Anda di lokasi "${d.alamat}" ${days <= 0 ? 'sudah melewati batas' : `akan jatuh tempo pada ${fmtDate(due)}`} untuk pengisian ulang. Mohon segera hubungi kami. Terima kasih.`
+    );
+    const waNum = (d.telp||'').replace(/\D/g,'').replace(/^0/,'62');
+    return `<div class="notif-item ${isOD?'':'warn'}">
+      <div class="notif-title">${isOD?'🔴':'🟡'} ${esc(d.nama)}</div>
+      <div class="notif-detail">
+        ${isOD
+          ? `<strong>${days < 0 ? `Sudah lewat ${Math.abs(days)} hari` : 'Jatuh tempo hari ini!'}</strong>`
+          : `Jatuh tempo <strong>${fmtDate(due)}</strong> (${days} hari lagi)`
+        }
+        &nbsp;·&nbsp; ${esc(d.alamat)}
+        &nbsp;·&nbsp; ${esc(d.telp)}
+        ${d.jenis ? ` &nbsp;·&nbsp; ${esc(d.jenis)}` : ''}
+      </div>
+      <div class="notif-actions">
+        <button class="btn-sm" onclick="editItem('${d.id}'); switchTabName('all')"><i class="ti ti-edit"></i> Edit</button>
+        ${waNum ? `<a href="https://wa.me/${waNum}?text=${waMsg}" target="_blank" class="btn-sm whatsapp" style="text-decoration:none"><i class="ti ti-brand-whatsapp"></i> Kirim WhatsApp</a>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── TABS ────────────────────────────────────────────────────
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-all').style.display    = tab==='all'    ? 'block' : 'none';
+  document.getElementById('panel-notif').style.display  = tab==='notif'  ? 'block' : 'none';
+  document.getElementById('panel-export').style.display = tab==='export' ? 'block' : 'none';
+  if (tab==='notif') renderNotif();
+}
+function switchTabName(name) {
+  const tabs = document.querySelectorAll('.tab-btn');
+  const panels = { all:'panel-all', notif:'panel-notif', export:'panel-export' };
+  tabs.forEach((t,i) => {
+    const n = ['all','notif','export'][i];
+    t.classList.toggle('active', n===name);
+  });
+  Object.entries(panels).forEach(([k,v]) => {
+    document.getElementById(v).style.display = k===name ? 'block' : 'none';
+  });
+}
+
+// ─── MODAL ───────────────────────────────────────────────────
+let editId = null;
+function openModal(id) {
+  editId = id || null;
+  const d = id ? data.find(x => x.id === id) : null;
+  document.getElementById('modal-title').textContent = id ? 'Edit Data APAR' : 'Tambah Data APAR';
+  document.getElementById('f-nama').value     = d?.nama     || '';
+  document.getElementById('f-alamat').value   = d?.alamat   || '';
+  document.getElementById('f-telp').value     = d?.telp     || '';
+  document.getElementById('f-jenis').value    = d?.jenis    || '';
+  document.getElementById('f-kapasitas').value= d?.kapasitas|| '';
+  document.getElementById('f-seri').value     = d?.seri     || '';
+  document.getElementById('f-tgl').value      = d?.tgl      || new Date().toISOString().split('T')[0];
+  document.getElementById('f-interval').value = d?.interval || '1';
+  document.getElementById('f-catatan').value  = d?.catatan  || '';
+  // qty: only show on add mode
+  document.getElementById('qty-group').style.display = id ? 'none' : 'block';
+  document.getElementById('f-qty').value = '1';
+  document.getElementById('qty-hint').textContent = '';
+  document.getElementById('qty-preview').style.display = 'none';
+  document.getElementById('btn-save-main').innerHTML = '<i class="ti ti-check"></i> Simpan';
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('f-nama').focus(), 100);
+}
+
+function changeQty(delta) {
+  const el = document.getElementById('f-qty');
+  const val = Math.max(1, Math.min(99, (parseInt(el.value)||1) + delta));
+  el.value = val;
+  onQtyChange();
+}
+
+function onQtyChange() {
+  const qty = Math.max(1, parseInt(document.getElementById('f-qty').value)||1);
+  const hint = document.getElementById('qty-hint');
+  const preview = document.getElementById('qty-preview');
+  const saveBtn = document.getElementById('btn-save-main');
+  if (qty <= 1) {
+    hint.textContent = '';
+    preview.style.display = 'none';
+    saveBtn.innerHTML = '<i class="ti ti-check"></i> Simpan';
+  } else {
+    hint.textContent = `→ akan membuat ${qty} data APAR`;
+    hint.style.color = 'var(--red)';
+    const nama = document.getElementById('f-nama').value.trim() || '[Nama Pembeli]';
+    const alamat = document.getElementById('f-alamat').value.trim() || '[Alamat]';
+    let lines = [];
+    for (let i = 1; i <= Math.min(qty, 4); i++) {
+      lines.push(`Unit ${i} — ${nama} · ${alamat}`);
+    }
+    if (qty > 4) lines.push(`<em>... dan ${qty - 4} unit lainnya</em>`);
+    preview.innerHTML = '📋 Preview data yang akan dibuat:<br>' + lines.join('<br>');
+    preview.style.display = 'block';
+    saveBtn.innerHTML = `<i class="ti ti-copy"></i> Simpan ${qty} Unit`;
+  }
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+function bgClose(e)   { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
+
+function saveData() {
+  const nama   = document.getElementById('f-nama').value.trim();
+  const alamat = document.getElementById('f-alamat').value.trim();
+  const telp   = document.getElementById('f-telp').value.trim();
+  if (!nama || !alamat || !telp) {
+    alert('Nama, alamat, dan nomor telepon wajib diisi.'); return;
+  }
+  if (!document.getElementById('f-tgl').value) {
+    alert('Tanggal pembelian wajib diisi.'); return;
+  }
+  const qty = editId ? 1 : Math.max(1, Math.min(99, parseInt(document.getElementById('f-qty').value)||1));
+  const base = {
+    nama,
+    alamat,
+    telp,
+    jenis:     document.getElementById('f-jenis').value.trim(),
+    kapasitas: document.getElementById('f-kapasitas').value.trim(),
+    seri:      document.getElementById('f-seri').value.trim(),
+    tgl:       document.getElementById('f-tgl').value,
+    interval:  document.getElementById('f-interval').value,
+    catatan:   document.getElementById('f-catatan').value.trim(),
+    createdAt: Date.now(),
+  };
+
+  if (editId) {
+    const i = data.findIndex(x => x.id === editId);
+    data[i] = { ...base, id: editId, createdAt: data[i]?.createdAt || Date.now() };
+  } else if (qty === 1) {
+    data.push({ ...base, id: uid() });
+  } else {
+    // multiple units — each gets a unit number appended to catatan
+    for (let i = 1; i <= qty; i++) {
+      const catatanUnit = base.catatan ? `${base.catatan} (Unit ${i} dari ${qty})` : `Unit ${i} dari ${qty}`;
+      data.push({ ...base, id: uid(), catatan: catatanUnit, createdAt: Date.now() + i });
+    }
+  }
+  saveStore(); closeModal(); renderAll();
+}
+
+function editItem(id)   { openModal(id); }
+function deleteItem(id) {
+  const d = data.find(x => x.id === id);
+  if (confirm(`Hapus data APAR milik "${d.nama}"?\n\nTindakan ini tidak dapat dibatalkan.`)) {
+    data = data.filter(x => x.id !== id);
+    saveStore(); renderAll();
+  }
+}
+
+// ─── EXPORT / IMPORT ─────────────────────────────────────────
+function exportCSV() {
+  if (!data.length) { alert('Belum ada data untuk diekspor.'); return; }
+  const headers = ['Nama','Alamat','Telepon','Jenis APAR','Kapasitas','No. Seri','Tanggal Beli','Interval (Tahun)','Tanggal Isi Ulang','Sisa Hari','Status','Catatan'];
+  const rows = data.map(d => {
+    const due  = dueDate(d.tgl, d.interval);
+    const days = daysLeft(due);
+    const st   = statusOf(days);
+    return [d.nama,d.alamat,d.telp,d.jenis||'',d.kapasitas||'',d.seri||'',d.tgl,d.interval,
+      due.toISOString().split('T')[0], days, st.label, d.catatan||'']
+      .map(v => `"${String(v).replace(/"/g,'""')}"`).join(',');
+  });
+  const csv = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+  dl(csv, 'apar-reminder-' + new Date().toISOString().split('T')[0] + '.csv', 'text/csv');
+}
+function exportJSON() {
+  if (!data.length) { alert('Belum ada data untuk diekspor.'); return; }
+  dl(JSON.stringify(data, null, 2), 'apar-backup-' + new Date().toISOString().split('T')[0] + '.json', 'application/json');
+}
+function importJSON(evt) {
+  const file = evt.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (!Array.isArray(imported)) throw new Error('Format tidak valid');
+      const existing = new Set(data.map(x=>x.id));
+      let added = 0;
+      imported.forEach(item => {
+        if (item.id && item.nama && item.tgl && item.interval) {
+          if (!existing.has(item.id)) { data.push(item); added++; }
+        }
+      });
+      saveStore(); renderAll();
+      document.getElementById('import-msg').textContent = `✓ Berhasil mengimpor ${added} data baru.`;
+      setTimeout(() => document.getElementById('import-msg').textContent = '', 4000);
+    } catch(err) {
+      alert('File tidak valid. Pastikan file JSON berasal dari export APAR Reminder.');
+    }
+    evt.target.value = '';
+  };
+  reader.readAsText(file);
+}
+function clearAll() {
+  if (confirm(`Hapus SEMUA data (${data.length} APAR)?\n\nPastikan kamu sudah membuat backup terlebih dahulu.`)) {
+    if (confirm('Yakin? Ini akan menghapus semua data secara permanen.')) {
+      data = []; saveStore(); renderAll();
+    }
+  }
+}
+function dl(content, filename, type) {
+  const blob = new Blob([content], {type});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ─── KEYBOARD ────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    if (document.getElementById('modal-overlay').classList.contains('open')) saveData();
+  }
+});
+
+// ─── INIT ────────────────────────────────────────────────────
+function renderAll() { renderStats(); renderList(); }
+loadData();
+renderAll();
+
+// Browser notification prompt (optional)
+if ('Notification' in window && Notification.permission === 'default') {
+  const urgentCount = data.filter(d => daysLeft(dueDate(d.tgl, d.interval)) <= 30).length;
+  if (urgentCount > 0) {
+    Notification.requestPermission().then(perm => {
+      if (perm === 'granted') {
+        new Notification('APAR Reminder', {
+          body: `Ada ${urgentCount} APAR yang perlu perhatian segera!`,
+          icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🧯</text></svg>'
+        });
+      }
+    });
+  }
+}
+</script>
+</body>
+</html>
